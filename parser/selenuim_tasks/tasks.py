@@ -35,3 +35,22 @@ def select_section_from_dropdown_menu(driver):
     element = driver.find_element(By.ID,"2534374302023689")
     time.sleep(3)
     element.click()
+
+
+def page_down(driver):
+    driver.execute_script('''
+                            const scrollStep = 200; // Размер шага прокрутки (в пикселях)
+                            const scrollInterval = 100; // Интервал между шагами (в миллисекундах)
+
+                            const scrollHeight = document.documentElement.scrollHeight;
+                            let currentPosition = 0;
+                            const interval = setInterval(() => {
+                                window.scrollBy(0, scrollStep);
+                                currentPosition += scrollStep;
+
+                                if (currentPosition >= scrollHeight) {
+                                    clearInterval(interval);
+                                }
+                            }, scrollInterval);
+                        ''')
+
