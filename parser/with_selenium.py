@@ -1,14 +1,16 @@
 import time
 
 from selenium import webdriver
+from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from parser.proxy_auth import proxy_auth
 from parser.selenuim_tasks.tasks import close_first_modal_window, close_second_modal_window, \
-    select_section_from_dropdown_menu, page_down
-from parser.settings import TARGET_URL, PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS, USER_AGENT, TEST_IP_URL
+    select_section_from_dropdown_menu, scrape_products, navigate_to_next_page, \
+    scroll_down, scroll_to_pagination
+from parser.settings import TARGET_URL, PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS, USER_AGENT
 
 
 def get_chromedriver(use_proxy=False, user_agent=None):
@@ -25,51 +27,50 @@ def get_chromedriver(use_proxy=False, user_agent=None):
 
     if user_agent:
         chrome_options.add_argument(f'--user-agent={USER_AGENT}')
+    try:
+        driver = webdriver.Chrome(options=chrome_options,keep_alive=True)
+        return driver
+    except Exception as e:
+        print(f"Error occurred: {e}")
 
-    driver = webdriver.Chrome(options=chrome_options)
-
-    return driver
 
 
 def main():
 
     driver = get_chromedriver(use_proxy=False,user_agent=True)
-
-    driver.get(TARGET_URL)
-
-    close_first_modal_window(driver)
-    close_second_modal_window(driver)
-    time.sleep(3)
-    select_section_from_dropdown_menu(driver)
-    time.sleep(3)
-
-    # Ждем, пока элемент с классом 'row_product_grid' станет доступен
     try:
-        product_grid = WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'row product-grid')]"))
-        )
-        time.sleep(3)
-        #Scroll down the page
-        page_down(driver)
-        time.sleep(15)
+        driver.get(TARGET_URL)
+        if driver.title == "Access Denied":
+            raise Exception("Access denied. Try again later")
 
-        list_of_element_classes = product_grid.find_elements(By.XPATH,"//div[contains(@class, 'col-6 col-sm-4 col-xl-3 product-tile-wrapper')]")
-        print(f"Got {len(list_of_element_classes)} items from the page")
+        close_first_modal_window(driver)
+        close_second_modal_window(driver)
+        time.sleep(2)
+        select_section_from_dropdown_menu(driver)
 
-        for num, element in enumerate(list_of_element_classes,start=1):
-            target_class = element.find_element(By.CLASS_NAME, "image-container")
-            thumb_link_classes = target_class.find_elements(By.CLASS_NAME, "thumb-link")
+        scroll_to_pagination(driver)
+        scrape_products(driver)
+        pagination = driver.find_element((By.XPATH, "//a[@class='d-inline-block' and @aria-label='Next']"))
+        for page in pagination:
+            page,get_
+        print(driver.current_url)
 
-            for link in thumb_link_classes:
-                print(f"{num}: {link.get_attribute('href')}")
+    except Exception as e:
+        print(f"{e}")
 
-        next_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "p.page-item.d-flex.next > a"))
-        )
-        next_button.click()
-        time.sleep(10)
     finally:
         driver.quit()
+
+
+        # while True:  # Цикл для перехода по страницам
+        #     wait_for_all_products_to_load(driver)
+        #     scrape_products(driver)
+        #     if not navigate_to_next_page(driver):
+        #         print("No more pages available.")
+        #         break
+
+
+
 
 if __name__ == '__main__':
     main()
