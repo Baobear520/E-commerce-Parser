@@ -2,6 +2,8 @@ import json
 import os
 import zipfile
 
+from pymongo import MongoClient
+
 def save_to_json(data,file_name):
     base_path = "data/json_files/"
     os.makedirs(base_path, exist_ok=True)
@@ -9,7 +11,7 @@ def save_to_json(data,file_name):
 
     with open(path_to_file, 'w', encoding='utf-8') as file:
         json.dump(data, file, indent=4, ensure_ascii=False)
-    print(f"Saved successfully!")
+    print(f"Saved successfully to {path_to_file}!")
 
 
 def save_to_zip(manifest_json, background_js, file_name):
@@ -32,3 +34,20 @@ def save_to_html(page_source,file_name):
     with open(path_to_file, 'w') as file:
         file.write(page_source)
     print(f"Page saved as {path_to_file}")
+
+
+def save_to_db(products, db_name="products_db", collection_name="men_products"):
+    """Сохраняет данные о продуктах в базу MongoDB."""
+    client = MongoClient('mongodb://localhost:27017/')
+    db = client[db_name]
+    collection = db[collection_name]
+
+
+    # Вставляем данные сразу все товары с текущей страницы
+    if isinstance(products, dict) and products:
+        collection.insert_many(products)
+        print(f"Inserted {len(products)} products into MongoDB.")
+    else:
+        print("No products to insert.")
+
+    client.close()

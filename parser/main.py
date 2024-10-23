@@ -1,6 +1,9 @@
 import time
 
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from parser.proxy_auth import proxy_auth
 from parser.tasks.bs4_tasks import parse_product_data
@@ -58,13 +61,27 @@ def main():
             data=product_urls,
             file_name="product_urls.json"
         )
-        driver.switch_to.new_window('tab')
-        time.sleep(3)
-        url = product_urls.get(1)
-        driver.get(url=url)
-        time.sleep(3)
-        page_source = str(driver.page_source)
-        save_to_html(page_source=page_source, file_name="test_product.html")
+        products = dict()
+        for k, v in product_urls.items():
+            #Opening a new tab with the product url
+            driver.switch_to.new_window('tab')
+            WebDriverWait(driver, 10).until(lambda d: len(d.window_handles) > 1)
+
+            driver.get(url=v)
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "product-secondary-section")))
+
+            #Obtaining page's HTML
+            page_source = driver.page_source
+            driver.close()
+            driver.switch_to.window(driver.window_handles[0])
+            #Extracting products data
+            product = parse_product_data(page_source=page_source)
+            products.update({k:product})
+            print(f"{k}:{product}")
+
+        print(f"Got {len(products)} products in the dictionary")
+        save_to_json(data=products,file_name="products_page_1")
 
     except Exception as e:
         print(f"{e}")

@@ -2,11 +2,13 @@ import lxml
 from bs4 import BeautifulSoup
 
 
-def parse_product_data(file):
-    with open(file, "r") as f:
-        soup = BeautifulSoup(f, 'lxml')
-    if soup:
-        print(f"Got the soup")
+def parse_product_data(page_source):
+    # with open(file, "r") as f:
+    #     soup = BeautifulSoup(f, 'lxml')
+    # if soup:
+    #     print(f"Got the soup")
+
+    soup = BeautifulSoup(page_source, 'lxml')
 
     product_container = soup.find('div', class_='product-secondary-section pdp-standard')
     print("Found the item container")
@@ -83,9 +85,8 @@ def parse_product_data(file):
 
     except Exception as e:
         print(f"Error parsing product details: {e}")
+    return product
 
-    print(product)
 
-
-parse_product_data(file="/Users/aldmikon/Desktop/Python_road/Projects/E-commerce_Parser/parser/test_product.html")
+#parse_product_data(file="/Users/aldmikon/Desktop/Python_road/Projects/E-commerce_Parser/parser/test_product.html")
 
