@@ -1,15 +1,13 @@
 import time
 
 from selenium import webdriver
-from selenium.webdriver import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 from parser.proxy_auth import proxy_auth
-from parser.selenuim_tasks.tasks import close_first_modal_window, close_second_modal_window, \
-    select_section_from_dropdown_menu, scrape_products, navigate_to_next_page, \
-    scroll_down, scroll_to_pagination
+from parser.tasks.bs4_tasks import parse_product_data
+from parser.tasks.other_tasks import save_to_json, save_to_html
+from parser.tasks.selenium_tasks import close_first_modal_window, close_second_modal_window, \
+    select_section_from_dropdown_menu, scrape_products,  \
+    scroll_to_pagination, get_pages
 from parser.settings import TARGET_URL, PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS, USER_AGENT
 
 
@@ -28,7 +26,7 @@ def get_chromedriver(use_proxy=False, user_agent=None):
     if user_agent:
         chrome_options.add_argument(f'--user-agent={USER_AGENT}')
     try:
-        driver = webdriver.Chrome(options=chrome_options,keep_alive=True)
+        driver = webdriver.Chrome(options=chrome_options)
         return driver
     except Exception as e:
         print(f"Error occurred: {e}")
@@ -37,7 +35,7 @@ def get_chromedriver(use_proxy=False, user_agent=None):
 
 def main():
 
-    driver = get_chromedriver(use_proxy=False,user_agent=True)
+    driver = get_chromedriver(user_agent=True)
     try:
         driver.get(TARGET_URL)
         if driver.title == "Access Denied":
@@ -45,15 +43,28 @@ def main():
 
         close_first_modal_window(driver)
         close_second_modal_window(driver)
-        time.sleep(2)
+        time.sleep(1)
+
         select_section_from_dropdown_menu(driver)
 
-        scroll_to_pagination(driver)
-        scrape_products(driver)
-        pagination = driver.find_element((By.XPATH, "//a[@class='d-inline-block' and @aria-label='Next']"))
-        for page in pagination:
-            page,get_
-        print(driver.current_url)
+        pagination = scroll_to_pagination(driver)
+        pages_urls = get_pages(pagination)
+        save_to_json(
+            data=pages_urls,
+            file_name="pages_urls.json"
+        )
+        product_urls = scrape_products(driver)
+        save_to_json(
+            data=product_urls,
+            file_name="product_urls.json"
+        )
+        driver.switch_to.new_window('tab')
+        time.sleep(3)
+        url = product_urls.get(1)
+        driver.get(url=url)
+        time.sleep(3)
+        page_source = str(driver.page_source)
+        save_to_html(page_source=page_source, file_name="test_product.html")
 
     except Exception as e:
         print(f"{e}")

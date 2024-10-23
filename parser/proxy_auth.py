@@ -1,4 +1,5 @@
-import zipfile
+
+from parser.tasks.other_tasks import save_to_zip
 
 
 def proxy_auth(host,port,user,password):
@@ -54,10 +55,5 @@ def proxy_auth(host,port,user,password):
     );
     """ % (host, port, user, password)
 
-    plugin_file = 'proxy_auth_plugin.zip'
 
-    with zipfile.ZipFile(plugin_file, 'w') as zp:
-        zp.writestr('manifest.json', manifest_json)
-        zp.writestr('background.js', background_js)
-
-    return plugin_file
+    return save_to_zip(manifest_json, background_js,file_name='proxy_auth_plugin.zip')
