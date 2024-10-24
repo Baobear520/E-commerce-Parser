@@ -1,0 +1,10 @@
+.venv
+data
+.idea
+*.pyc
+__pycache__/
+.DS_Store
+parser/products.db
+parser/threads_main.py
+parser/threads_sqlite.py
+

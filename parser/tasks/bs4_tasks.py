@@ -1,12 +1,7 @@
-import lxml
 from bs4 import BeautifulSoup
 
 
 def parse_product_data(page_source):
-    # with open(file, "r") as f:
-    #     soup = BeautifulSoup(f, 'lxml')
-    # if soup:
-    #     print(f"Got the soup")
 
     soup = BeautifulSoup(page_source, 'lxml')
 
@@ -34,6 +29,8 @@ def parse_product_data(page_source):
     #     "discount_price": <span class="formatted_sale_price formatted_price js-final-sale-price bfx-price bfx-sale-price" data-unformatted-price="69.99" data-bfx="{&quot;original&quot;:[&quot;$69.99&quot;],&quot;id&quot;:&quot;5a8z34gn0&quot;}">&#xFEFF;HKD 586.63</span>,
     #     "color": <span class="attr-name adobelaunch__colorlink" data-adobelaunchcolorproductid="0400021910443" data-adobelaunchproductcolor="BLACK MULTI"><span class="text1">Color: </span><span class="text2">BLACK MULTI</span></span>
     # }
+
+
     # Инициализируем переменные для хранения данных
     product = {
         "name": None,
@@ -87,6 +84,4 @@ def parse_product_data(page_source):
         print(f"Error parsing product details: {e}")
     return product
 
-
-#parse_product_data(file="/Users/aldmikon/Desktop/Python_road/Projects/E-commerce_Parser/parser/test_product.html")
 

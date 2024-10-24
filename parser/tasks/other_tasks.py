@@ -41,10 +41,10 @@ def save_to_db(products, db_name="products_db", collection_name="men_products"):
     client = MongoClient('mongodb://localhost:27017/')
     db = client[db_name]
     collection = db[collection_name]
-
+    collection.create_index("product_id", unique=True)
 
     # Вставляем данные сразу все товары с текущей страницы
-    if isinstance(products, dict) and products:
+    if isinstance(products, list) and products:
         collection.insert_many(products)
         print(f"Inserted {len(products)} products into MongoDB.")
     else:
