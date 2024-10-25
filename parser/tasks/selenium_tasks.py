@@ -1,5 +1,6 @@
 import time
 
+from bs4 import BeautifulSoup
 from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -59,7 +60,7 @@ def scroll_to_pagination(driver):
                 # Прокручиваем до видимости элемента
                 driver.execute_script("arguments[0].scrollIntoView(true);", pagination)
                 print("Pagination is now in view.")
-                return pagination
+                return True
 
             except TimeoutException as e:
                 # Если элемент существует, но не взаимодействуемый (например, невидим), продолжаем прокручивать
@@ -72,18 +73,28 @@ def scroll_to_pagination(driver):
                 print(f"Something went wrong during scrolling. Retrying ({max_retries} retries left)...")
 
 
-def get_pages(pagination):
-    pages_urls_dict = dict()
-    try:
-        links_to_pages = [container.get_attribute("href") for container in pagination.find_elements(By.TAG_NAME, "a")]
-        for num,link in enumerate(links_to_pages,start=1):
-            pages_urls_dict.update({num:link})
-            print(f"{num}: {link}")
-        return pages_urls_dict
+def get_pages(driver):
+    if scroll_to_pagination(driver):
+        try:
+            # Получаем HTML-код страницы после появления элемента пагинации
+            page_source = driver.page_source
+            soup = BeautifulSoup(page_source, 'lxml')
 
-    except Exception as e:
-        print(type(e))
-        print(f"Error while parsing pagination object: {e}")
+            # Ищем контейнер с классом 'mx-auto pagination'
+            pagination = soup.find('ul', class_='mx-auto pagination')
+            if not pagination:
+                print("Pagination container not found.")
+                return []
+
+            # Извлекаем все ссылки на страницы из контейнера
+            return [a['href'] for a in pagination.find_all('a', href=True)]
+
+
+        except Exception as e:
+            print(type(e))
+            print(f"Error while parsing pagination object: {e}")
+
+        return []
 
 
 def scrape_product_links(driver):
@@ -98,5 +109,10 @@ def scrape_product_links(driver):
         product_urls_dict.update({num:url})
         print(f"{num}: {url}")
     return product_urls_dict
+
+def refresh_window(driver,url):
+    driver.get(url)
+
+
 
 
