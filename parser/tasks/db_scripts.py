@@ -1,119 +1,150 @@
-# from pymongo import MongoClient
-#
-# def check_db(db_name="products",collection_name="men_products"):
-#     client = MongoClient('mongodb://localhost:27017/')
-#     db = client[db_name]
-#     collection = db[collection_name]
-#
-#     product = collection.find_one({"product_id": "1"})
-#     print(product)
-
-
 import sqlite3
 from datetime import datetime
 
-# Путь к файлу базы данных SQLite
-DB_PATH = 'products.db'
 
-
-def init_db():
-    """Инициализирует базу данных и создает таблицу, если она не существует."""
-
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    # cursor.execute('''
-    #     DROP TABLE IF EXISTS products
-    # ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS products (
-            product_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            brand_name TEXT,
-            name TEXT UNIQUE,
-            description TEXT,
-            original_price REAL,
-            discount_price REAL,
-            color TEXT,
-            last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-
-def save_to_sqlite_db(products):
-    """Saves product data to the SQLite database, inserting or updating as needed."""
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Standard datetime format
-
-    # Use a context manager to ensure the connection is closed automatically
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-
-        for product in products:
-            if not product:
-                continue  # Skip empty product entries
+def init_db(db, table_name="products"):
+    """Initializes the database and creates a table if it does not exist."""
+    try:
+        with sqlite3.connect(db) as conn:
+            cursor = conn.cursor()
 
             try:
-                # Attempt to insert a new product
-                cursor.execute('''
-                    INSERT INTO products (
-                    brand_name, name, description, original_price, discount_price, color, last_updated
-                )
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    product["brand_name"],
-                    product["name"],
-                    product["description"],
-                    product["original_price"],
-                    product["discount_price"],
-                    product["color"],
-                    current_time
-                ))
-                print(f"Inserted product: {product['name']}")
+                cursor.execute(f'''
+                    DROP TABLE IF EXISTS {table_name}
+                ''')
+                print(f"Table '{table_name}' dropped successfully (if it existed).")
+            except sqlite3.OperationalError as e:
+                print(f"Operational error during table drop: {e}.")
+            try:
+                cursor.execute(f'''
+                    CREATE TABLE IF NOT EXISTS {table_name} (
+                        product_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        style_code INT UNIQUE,
+                        brand_name TEXT,
+                        name TEXT,
+                        description TEXT,
+                        original_price_USD REAL,
+                        discount_price_USD REAL,
+                        color TEXT,
+                        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                conn.commit()
+                print(f"Table '{table_name}' initialized successfully.")
+            except sqlite3.OperationalError as e:
+                print(f"Operational error during table creation: {e}.")
+            except sqlite3.DatabaseError as e:
+                print(f"Database error during table creation: {e}.")
+            except Exception as e:
+                print(f"An unexpected error occurred during table creation: {e}.")
+    except sqlite3.Error as e:
+        print(f"Error connecting to the database '{db}': {e}.")
 
-            except sqlite3.IntegrityError:
-                # If the `name` already exists, update the existing record
 
-                cursor.execute('''
-                    UPDATE products 
-                    SET 
-                        brand_name = ?, 
-                        description = ?, 
-                        original_price = ?, 
-                        discount_price = ?, 
-                        color = ?, 
-                        last_updated = ?
-                    WHERE name = ?
-                ''', (
-                    product["brand_name"],
-                    product["description"],
-                    product["original_price"],
-                    product["discount_price"],
-                    product["color"],
-                    current_time,
-                    product["name"]
-                ))
-                print(f"Updated product: {product['name']}")
+def save_to_sqlite_db(db, data, table_name="products"):
+    """Saves product data to the SQLite database, inserting or updating as needed."""
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        conn.commit()
-    print(f"Processed {len(products)} products.")
 
-def check_sqlite_db():
-    # Connect to the SQLite database (or create it if it doesn't exist)
-    conn = sqlite3.connect(DB_PATH)
+    try:
+        with sqlite3.connect(db) as conn:
+            cursor = conn.cursor()
 
-    # Create a cursor object to execute SQL queries
-    cursor = conn.cursor()
+            for product in data:
+                if not product:
+                    print("Skipped empty product entry.")
+                    continue  # Skip empty product entries
 
-    # Execute a query to select records from a table (replace 'your_table' with your table name)
-    cursor.execute("SELECT * FROM products")
+                try:
+                    # Attempt to insert a new product
+                    cursor.execute(f'''
+                        INSERT INTO {table_name} (
+                            style_code, brand_name, name, description, original_price_USD, discount_price_USD, color, last_updated
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        product["style_code"],
+                        product["brand_name"],
+                        product["name"],
+                        product["description"],
+                        product["original_price_USD"],
+                        product["discount_price_USD"],
+                        product["color"],
+                        current_time
+                    ))
+                    print(f"Inserted product: {product["style_code"]} {product["name"]}")
 
-    # Fetch all records from the query result
-    records = cursor.fetchall()
+                except sqlite3.IntegrityError:
+                    # Handle uniqueness constraint violation and update existing record
+                    try:
+                        cursor.execute(f'''
+                            UPDATE {table_name}
+                            SET 
+                                style_code = ?
+                                brand_name = ?, 
+                                description = ?, 
+                                original_price_USD = ?, 
+                                discount_price_USD = ?, 
+                                color = ?, 
+                                last_updated = ?
+                            WHERE name = ?
+                        ''', (
+                            product["style_code"],
+                            product["brand_name"],
+                            product["description"],
+                            product["original_price_USD"],
+                            product["discount_price_USD"],
+                            product["color"],
+                            current_time,
+                            product["name"]
+                        ))
+                        print(f"Updated product: {product["style_code"]} {product['name']}")
+                    except sqlite3.OperationalError as e:
+                        print(f"Operational error during update: {e}.")
+                    except sqlite3.DatabaseError as e:
+                        print(f"Database error during update: {e}.")
+                    except Exception as e:
+                        print(f"Unexpected error during update: {e}.")
 
-    # Print out each record
-    for record in records:
-        print(record)
-    print("Database check finished")
+                except sqlite3.OperationalError as e:
+                    print(f"Operational error during insertion: {e}.")
+                except sqlite3.DatabaseError as e:
+                    print(f"Database error during insertion: {e}.")
+                except Exception as e:
+                    print(f"An unexpected error occurred during insertion: {e}.")
 
-    # Close the connection
-    conn.close()
+            conn.commit()
+        print(f"Processed {len(data)} products.")
+
+    except sqlite3.Error as e:
+        print(f"Error connecting to the database '{db}': {e}.")
+
+
+def check_sqlite_db(db, table_name="products"):
+    """Checks and prints records from a specified table."""
+    try:
+        with sqlite3.connect(db) as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute(f'''
+                    SELECT * FROM {table_name}
+                ''')
+                records = cursor.fetchall()
+
+                if records:
+                    for record in records:
+                        print(record)
+                    print(f"Database check finished. Retrieved {len(records)} records.")
+                else:
+                    print(f"No records found in table '{table_name}'.")
+
+            except sqlite3.OperationalError as e:
+                print(f"Operational error during data retrieval: {e}.")
+            except sqlite3.DatabaseError as e:
+                print(f"Database error during data retrieval: {e}.")
+            except Exception as e:
+                print(f"An unexpected error occurred during data retrieval: {e}.")
+
+    except sqlite3.Error as e:
+        print(f"Error connecting to the database '{db}': {e}.")
+
