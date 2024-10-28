@@ -10,8 +10,8 @@ from parser.proxy_auth import proxy_auth
 from parser.tasks.bs4_tasks import parse_product_data
 from parser.tasks.db_scripts import init_db, save_to_sqlite_db, check_sqlite_db
 from parser.tasks.selenium_tasks import close_first_modal_window, close_second_modal_window, \
-    select_section_from_dropdown_menu, scrape_product_links,  \
-    scroll_to_pagination, get_pages
+    select_section_from_dropdown_menu, scrape_product_links, \
+    scroll_to_pagination
 from parser.settings import TARGET_URL, PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS, USER_AGENT, DB_PATH
 
 
@@ -72,10 +72,11 @@ def main():
     max_retries = 5
     attempts = 0
 
+    init_db(db=DB_PATH)
+
     while attempts < max_retries:
         try:
-            # Инициализация базы данных и драйвера браузера
-            init_db(db=DB_PATH)
+
             driver = get_chromedriver(user_agent=True)
 
             # Записываем время начала выполнения скрипта
@@ -86,34 +87,29 @@ def main():
             if driver.title == "Access Denied":
                 raise Exception("Access denied. Try again later")
 
+            #Resetting attempts counter
             attempts = 0
 
             # Подготовительные действия
             preparations_in_browser(driver)
 
-            # Извлечение ссылок на страницы и добавление первой страницы
-            pages_urls = get_pages(driver)
-            pages_urls[0] = driver.current_url
-
-
             # Цикл по страницам
-            for page in pages_urls:
-                if page != driver.current_url:
-                    driver.get(page)
-                    # Ждем, пока URL обновится на нужный
-                    WebDriverWait(driver, 10).until(
-                        lambda d: d.current_url == page
-                    )
-                    print(f"Navigated to: {driver.current_url}")
-
-                    scroll_to_pagination(driver)
-
+            all_products = dict()
+            while len(all_products) < 100:
+                print(f"Navigated to: {driver.current_url}")
+                next_page = scroll_to_pagination(driver)
                 # Извлекаем ссылки на продукты и данные о них
                 product_urls = scrape_product_links(driver)
                 products = fetch_products(driver=driver, product_urls=product_urls)
 
-                # Сохраняем данные о продуктах в базу данных
+                #Updating all the products
+                all_products.update({k:v for k, v in enumerate(products)})
+
+                # Saving in the db
                 save_to_sqlite_db(db=DB_PATH, data=products)
+                # Directing to the next page
+                next_page.click()
+                time.sleep(5)
 
             # Выводим время выполнения скрипта
             end_time = time.time()
@@ -143,6 +139,7 @@ def main():
             # Закрываем браузер, если он был открыт
             if 'driver' in locals():
                 driver.quit()
+
 # def main():
 #     start_time = time.time()
 #

@@ -1,7 +1,7 @@
 import time
 
 from bs4 import BeautifulSoup
-from selenium.common import TimeoutException
+from selenium.common import TimeoutException, ElementClickInterceptedException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -48,53 +48,38 @@ def select_section_from_dropdown_menu(driver):
 
 def scroll_to_pagination(driver):
     """Прокручивает страницу вниз до тех пор, пока элемент  pagination не станет видимым."""
-    scroll_step = 600
+    scroll_step = 800
     max_retries = 5
 
     while max_retries:
             try:
                 # Проверяем, видим ли уже элемент пагинации
+                # pagination = WebDriverWait(driver, 1).until(
+                #     EC.presence_of_element_located((By.XPATH, "//ul[@class='mx-auto pagination']"))
+                # )
                 pagination = WebDriverWait(driver, 1).until(
-                    EC.presence_of_element_located((By.XPATH, "//ul[@class='mx-auto pagination']"))
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "p.page-item.d-flex.next > a.d-inline-block"))
                 )
-                # Прокручиваем до видимости элемента
-                driver.execute_script("arguments[0].scrollIntoView(true);", pagination)
+                # # Прокручиваем до видимости элемента
+                # driver.execute_script("arguments[0].scrollIntoView(true);", pagination)
+                # Прокручиваем до видимости кнопки
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", pagination)
+
+                # # Ждем, пока элемент станет кликабельным
+                # WebDriverWait(driver, 10).until(
+                #     EC.element_to_be_clickable((By.CSS_SELECTOR, "p.page-item.d-flex.next > a.d-inline-block")))
                 print("Pagination is now in view.")
-                return True
+                return pagination
 
             except TimeoutException as e:
                 # Если элемент существует, но не взаимодействуемый (например, невидим), продолжаем прокручивать
                 driver.execute_script(f"window.scrollBy(0, {scroll_step});")
-                time.sleep(0.5)  # Ждем немного перед следующей прокруткой
+                time.sleep(0.25)  # Ждем немного перед следующей прокруткой
 
             except Exception as e:
                 # Обработка любых других исключений
                 max_retries -= 1
                 print(f"Something went wrong during scrolling. Retrying ({max_retries} retries left)...")
-
-
-def get_pages(driver):
-    if scroll_to_pagination(driver):
-        try:
-            # Получаем HTML-код страницы после появления элемента пагинации
-            page_source = driver.page_source
-            soup = BeautifulSoup(page_source, 'lxml')
-
-            # Ищем контейнер с классом 'mx-auto pagination'
-            pagination = soup.find('ul', class_='mx-auto pagination')
-            if not pagination:
-                print("Pagination container not found.")
-                return []
-
-            # Извлекаем все ссылки на страницы из контейнера
-            return [a['href'] for a in pagination.find_all('a', href=True)]
-
-
-        except Exception as e:
-            print(type(e))
-            print(f"Error while parsing pagination object: {e}")
-
-        return []
 
 
 def scrape_product_links(driver):
