@@ -1,14 +1,16 @@
 import json
-
+from random import  randint
 from bs4 import BeautifulSoup
 
 from bs4 import BeautifulSoup
+from aiohttp import ClientSession
+from selenium.webdriver.common.devtools.v85.runtime import await_promise
+from asyncio import sleep
 
 
 def parse_product_data(page_source):
     """Парсит HTML страницы продукта и извлекает информацию о продукте."""
     soup = BeautifulSoup(page_source, 'lxml')
-
     # Находим основной контейнер продукта
     product_container = soup.find('div', class_='product-secondary-section pdp-standard')
     print("Found the item container")
@@ -99,6 +101,114 @@ def parse_product_data(page_source):
         print(f"Error parsing product details: {e}")
 
     return product
+
+import random
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
+    # Add more user agents
+]
+
+async def async_parse_product_data(session: ClientSession, url: str):
+    """Asynchronously parses the HTML of a product page and extracts product information."""
+    headers = {
+        "User-Agent": random.choice(USER_AGENTS)
+    }
+
+    async with session.get(url,headers=headers) as response:
+        # Here you might process the page content asynchronously.
+        page_content = await response.text()
+        await sleep(randint(1,5))
+        soup = BeautifulSoup(page_content, 'lxml')
+        print(soup.prettify())
+        # Locate the main product container
+        product_container = soup.find('div', class_='product-secondary-section pdp-standard')
+
+        if not product_container:
+            print("Product container not found.")
+            return None
+        print("Found the item container")
+
+        # Initialize product data dictionary
+        product = {
+            "name": None,
+            "brand_name": None,
+            "description": None,
+            "original_price_USD": None,
+            "discount_price_USD": None,
+            "color": None,
+            "style_code": None
+        }
+
+        def extract_text(tag, class_name, default=None, get_link_text=False):
+            """Helper function to extract text from a given tag."""
+            element = tag.find(class_=class_name) if tag else None
+            if get_link_text and element:
+                link = element.find('a')
+                return link.get_text(strip=True) if link else default
+            return element.get_text(strip=True) if element else default
+
+        try:
+            # Extract brand name
+            product["brand_name"] = extract_text(soup, 'product-brand-name', get_link_text=True)
+
+            # Extract product name
+            product["name"] = extract_text(soup, 'product-name h2')
+
+            # Extract product description (use only the first sentence)
+            description = extract_text(soup, 'value content', default="", get_link_text=False)
+            product["description"] = description.split(".")[0] + "." if description else None
+
+            # Extract original price (non-discounted)
+            original_price_tag = soup.find('span', class_='formatted_price bfx-price bfx-list-price')
+            if original_price_tag and original_price_tag.has_attr('content'):
+                product["original_price_USD"] = float(original_price_tag['content'].replace('$', '').replace(',', ''))
+
+            # Extract discounted price
+            discount_price_tag = soup.find(
+                'span',
+                class_='formatted_sale_price formatted_price js-final-sale-price bfx-price bfx-sale-price'
+            )
+            product["discount_price_USD"] = (
+                float(discount_price_tag['content'].replace('$', '').replace(',', ''))
+                if discount_price_tag and discount_price_tag.has_attr('content')
+                else None
+            )
+
+            # Extract colors (as a list)
+            colors = []
+
+            # Check for a single color
+            single_color_tag = soup.find('span', class_='color non-input-label attribute-single')
+            if single_color_tag:
+                color_name = extract_text(single_color_tag, 'text2')
+                if color_name:
+                    colors.append(color_name.lower())
+
+            # Extract multiple colors if available
+            multi_color_container = soup.find('ul', class_='color-wrapper radio-group-list', role='radiogroup')
+            if multi_color_container:
+                color_buttons = multi_color_container.find_all('button', class_='color-attribute')
+                colors += [
+                    button.get('aria-label', '').split('Select Color')[-1].strip().lower()
+                    for button in color_buttons
+                    if 'Select Color' in button.get('aria-label', '')
+                ]
+
+            # Set the colors as a JSON string or None
+            product["color"] = json.dumps(colors) if colors else None
+
+            # Extract Style Code
+            style_code_tag = soup.find('div', class_='product-detail-id')
+            if style_code_tag:
+                style_code_text = style_code_tag.get_text(strip=True)
+                product["style_code"] = style_code_text.split("Style Code:")[-1].strip() if "Style Code:" in style_code_text else None
+
+        except Exception as e:
+            print(f"Error parsing product details: {e}")
+
+        return product
 
 # product = {
     #   "style_code": <div class="product-detail-id">Style Code: 0400021492026</div>
