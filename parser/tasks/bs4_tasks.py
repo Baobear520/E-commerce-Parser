@@ -47,20 +47,25 @@ def parse_product_data(page_source):
             description = description_tag.get_text(strip=True).split(".")[0] + "."
             product["description"] = description
 
-        # Извлекаем оригинальную цену (без скидки)
-        original_price_tag = soup.find('span', class_='formatted_price bfx-price bfx-list-price')
-        if original_price_tag and original_price_tag.has_attr('content'):
-            product["original_price"] = float(original_price_tag['content'].replace('$', '').replace(',', ''))
+        # Locate the prices container
+        prices_container = soup.find('div', class_='prices')
 
-        # Извлекаем цену со скидкой
-        discount_price_tag = soup.find(
-            'span',
-            class_='formatted_sale_price formatted_price js-final-sale-price bfx-price bfx-sale-price'
-        )
-        if discount_price_tag and discount_price_tag.has_attr('content'):
-            product["discount_price"] = float(discount_price_tag['content'].replace('$', '').replace(',', ''))
-        else:
-            product["discount_price"] = None
+        if prices_container:
+            # Extract the original price
+            original_price_tag = prices_container.find('span', class_='value')
+            product["original_price_USD"] = (
+                float(original_price_tag['content'].replace(',', ''))
+                if original_price_tag and original_price_tag.has_attr('content')
+                else None
+            )
+
+            # Extract the discount price
+            discount_price_tag = prices_container.find('span', class_='value bfx-price')
+            product["discount_price_USD"] = (
+                float(discount_price_tag['content'].replace(',', ''))
+                if discount_price_tag and discount_price_tag.has_attr('content')
+                else None
+            )
 
         # Извлекаем цвет (массив)
         colors = []
@@ -99,8 +104,11 @@ def parse_product_data(page_source):
 
     except Exception as e:
         print(f"Error parsing product details: {e}")
-
     return product
+
+
+
+
 
 import random
 USER_AGENTS = [
@@ -160,21 +168,7 @@ async def async_parse_product_data(session: ClientSession, url: str):
             description = extract_text(soup, 'value content', default="", get_link_text=False)
             product["description"] = description.split(".")[0] + "." if description else None
 
-            # Extract original price (non-discounted)
-            original_price_tag = soup.find('span', class_='formatted_price bfx-price bfx-list-price')
-            if original_price_tag and original_price_tag.has_attr('content'):
-                product["original_price_USD"] = float(original_price_tag['content'].replace('$', '').replace(',', ''))
 
-            # Extract discounted price
-            discount_price_tag = soup.find(
-                'span',
-                class_='formatted_sale_price formatted_price js-final-sale-price bfx-price bfx-sale-price'
-            )
-            product["discount_price_USD"] = (
-                float(discount_price_tag['content'].replace('$', '').replace(',', ''))
-                if discount_price_tag and discount_price_tag.has_attr('content')
-                else None
-            )
 
             # Extract colors (as a list)
             colors = []
@@ -229,3 +223,6 @@ async def async_parse_product_data(session: ClientSession, url: str):
     #     "discount_price": <span class="formatted_sale_price formatted_price js-final-sale-price bfx-price bfx-sale-price" data-unformatted-price="69.99" data-bfx="{&quot;original&quot;:[&quot;$69.99&quot;],&quot;id&quot;:&quot;5a8z34gn0&quot;}">&#xFEFF;HKD 586.63</span>,
     #     "color": container - <ul class="color-wrapper radio-group-list" role="radiogroup">, <ul class="color-wrapper radio-group-list" role="radiogroup"><li role="radio" aria-checked="true">
     # 										<button class="color-attribute radio-group-trigger adobelaunch__colorlink selectable selected" aria-label="Select Color BANDANA" aria-describedby="BANDANA"
+# container div class="prices">
+# original price <span class="value" content="570.00">
+# discount price <span class="value bfx-price" content="299.99">
