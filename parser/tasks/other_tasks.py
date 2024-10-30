@@ -51,3 +51,11 @@ def save_to_db(products, db_name="products_db", collection_name="men_products"):
         print("No products to insert.")
 
     client.close()
+
+def get_proxies(source):
+    try:
+        with open(source,"r") as f:
+            return [p for p in f]
+    except Exception as e:
+        print(type(e))
+        print(f"Error while extracting proxies from the file.")
