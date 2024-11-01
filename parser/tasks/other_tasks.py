@@ -59,3 +59,11 @@ def get_proxies(source):
     except Exception as e:
         print(type(e))
         print(f"Error while extracting proxies from the file.")
+
+async def async_get_proxies(source):
+    try:
+        with open(source,"r") as f:
+            return [p for p in f]
+    except Exception as e:
+        print(type(e))
+        print(f"Error while extracting proxies from the file.")
