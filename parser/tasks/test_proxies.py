@@ -1,6 +1,9 @@
+import random
 import threading
 import queue
 import requests
+
+from parser.settings import TARGET_URL
 
 q = queue.Queue()
 valid_proxies = []
@@ -11,6 +14,12 @@ output_file_name = "valid_proxies.txt"
 base_path = "/Users/aldmikon/Desktop/Python_road/Projects/E-commerce_Parser/data/"
 path_to_source = base_path + source_file_name
 path_to_output = base_path + output_file_name
+
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
+    ]
 
 # Load proxies into the queue
 try:
@@ -57,7 +66,7 @@ for thread in threads:
 try:
     with open(path_to_output, "w") as f:
         f.write("\n".join(valid_proxies))
-    print("Finished writing valid proxies.")
+    print(f"Finished writing {len(valid_proxies)} valid proxies.")
 except Exception as e:
     print(type(e))
     print(f"Error occurred while trying to write to the file: {e}")
