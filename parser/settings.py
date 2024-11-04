@@ -1,9 +1,9 @@
 
 #Proxy settings
-PROXY_HOST = '45.130.126.204' # rotating proxy or host
-PROXY_PORT = 8000 # proxy port
-PROXY_USER = 'tsDLZZ' # username
-PROXY_PASS = 'nsn4Ga' # password
+# PROXY_HOST = '45.130.126.204' # rotating proxy or host
+# PROXY_PORT = 8000 # proxy port
+PROXY_USER = 'qgohyhbo' # username
+PROXY_PASS = '53rh9poolpp0' # password
 #Selenium data source
 TEST_IP_URL = 'https://atomurl.net/myip/'
 TARGET_URL = 'https://www.saksoff5th.com/'

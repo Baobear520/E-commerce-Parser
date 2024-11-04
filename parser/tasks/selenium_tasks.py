@@ -9,17 +9,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from urllib3.exceptions import MaxRetryError
 
 
-# top window
-# <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front bfx-wm-dialog ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-describedby="bfx-wm-wrapper"
-# button
-# <a id="bfx-wm-close-button" class="bfx-wm-close" href="javascript:void(0)" aria-label="close"></a>
-
-# second window
-# <div class="modal show" id="welcome-email-modal" role="dialog" aria-modal="true" style="display: block;
-# button
-# <span class="consent-tracking-close svg-svg-22-cross-dims svg-svg-22-cross" id="consent-close"></span>
-
-
 def close_modal_windows(driver):
     # First modal window configuration
     top_modal_selector = (By.CLASS_NAME, "bfx-wm-dialog")
