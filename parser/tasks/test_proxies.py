@@ -3,6 +3,8 @@ import aiohttp
 import aiofiles
 import random
 
+from parser.settings import PATH_TO_VALID_PROXIES
+
 
 async def read_proxies(source):
     """Load proxies from a file asynchronously and place them into a queue."""
@@ -32,18 +34,30 @@ async def save_valid_proxies(path_to, proxies):
         print(f"Error writing valid proxies to file: {e}")
 
 
-async def test_proxy(session, url, proxy, proxy_auth):
+async def trim_proxy(proxy):
+    proxy_split = proxy.split(":")
+    login, password = proxy_split[-2], proxy_split[-1]
+    proxy = proxy.removesuffix(f":{login}:{password}")
+    return proxy, login, password
+
+async def test_proxy(session, url, proxy, has_proxy_auth):
     """Test a proxy by attempting to connect to a URL."""
     try:
+        if has_proxy_auth:
+            proxy, login, password = await trim_proxy(proxy=proxy)
+            proxy_auth = aiohttp.BasicAuth(login=login, password=password)
+        else:
+            proxy_auth = None
         async with session.get(
                 url,
                 proxy=proxy,
-            proxy_auth=proxy_auth,
-            timeout=10
+                proxy_auth=proxy_auth,
+                timeout=10
         ) as response:
             if response.status == 200:
                 print(f"Valid proxy: {proxy}")
-                return proxy
+                return proxy if not has_proxy_auth else ":".join([proxy,login,password])
+
             else:
                 print(f"Invalid response {response.status} for proxy: {proxy}")
     except Exception as e:
@@ -55,32 +69,23 @@ async def gather_tasks(session, url, proxies_queue, has_proxy_auth):
     tasks = []
     while not proxies_queue.empty():
         proxy = await proxies_queue.get()
-        if has_proxy_auth:
-            proxy_split = proxy.split(":")
-            login, password = proxy_split[-2], proxy_split[-1]
-            proxy = proxy.removesuffix(f":{login}:{password}")
-            print(proxy)
-            proxy_auth = aiohttp.BasicAuth(login=login, password=password)
-        else:
-            proxy_auth = None
-        task = test_proxy(session, url, proxy, proxy_auth)
+        task = test_proxy(session, url, proxy, has_proxy_auth)
         tasks.append(task)
 
     results = await asyncio.gather(*tasks)
     return [proxy for proxy in results if proxy]
 
 
-async def main(has_proxy_auth=False):
+async def check_proxies(has_proxy_auth=False):
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
     ]
     source_file_name = "auth_proxies.txt" if has_proxy_auth else "anon_proxies.txt"
-    output_file_name = "valid_proxies.txt"
     base_path = "/Users/aldmikon/Desktop/Python_road/Projects/E-commerce_Parser/data/"
     path_to_source = base_path + source_file_name
-    path_to_output = base_path + output_file_name
+    path_to_output = PATH_TO_VALID_PROXIES
     test_url = "https://httpbin.org/ip"
 
     proxies_queue = await read_proxies(source=path_to_source)
@@ -98,5 +103,5 @@ async def main(has_proxy_auth=False):
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(check_proxies())
 

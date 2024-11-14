@@ -2,6 +2,7 @@ import random
 import asyncio
 import json
 
+import aiohttp
 from bs4 import BeautifulSoup
 from aiohttp import ClientSession, ClientResponseError, ServerDisconnectedError, ClientError
 from aiohttp.http_exceptions import HttpProcessingError
@@ -9,6 +10,13 @@ from aiohttp.http_exceptions import HttpProcessingError
 from parser.exceptions import AccessDeniedException
 from parser.settings import USER_AGENT
 
+from parser.tasks.test_proxies import trim_proxy
+
+
+async def async_get_page_soup(response):
+    # Process page content
+    page_content = await response.text()
+    return BeautifulSoup(page_content, 'lxml')
 
 
 async def async_parse_product_data(
@@ -16,7 +24,6 @@ async def async_parse_product_data(
         url: str,
         use_proxy,
         require_proxy_auth,
-        proxy_auth,
         proxies):
 
     """Asynchronously parses the HTML of a product page and extracts product information."""
@@ -24,15 +31,18 @@ async def async_parse_product_data(
 
     max_retries = 5
     retry_count = 1
-
     while retry_count < max_retries:
         proxy = None
-        # Choose a proxy if enabled
-        if use_proxy and proxies:
-            #proxy = f"http://{random.choice(proxies)}"
-
+        if use_proxy:
             proxy = random.choice(proxies)
+            if require_proxy_auth:
+                proxy, login, password = await trim_proxy(proxy=proxy)
+                proxy_auth = aiohttp.BasicAuth(login=login, password=password)
+        else:
+            proxies = None
+            proxy_auth = None
         try:
+            print(proxy)
             async with session.get(
                     url=url,
                     headers=headers,
@@ -40,34 +50,38 @@ async def async_parse_product_data(
                     proxy_auth=proxy_auth,
                     timeout=10
             ) as response:
-
-                # Process page content
-                page_content = await response.text()
-                soup = BeautifulSoup(page_content, 'lxml')
-
+                soup = await async_get_page_soup(response=response)
                 # Check if the page title is "Access Denied"
                 if soup.title and "Access Denied" in soup.title.get_text():
                     raise AccessDeniedException
 
+        except AccessDeniedException:
+            print(f"Access denied.")
+            if use_proxy:
+                proxies = [p for p in proxies if not p.startswith(proxy)]
+            if retry_count == max_retries:
+                print("Reached maximum number of retries. Closing...")
+                return
+            else:
+                retry_count += 1
+                await asyncio.sleep(10)
+                continue
+
         except (ClientResponseError,
             ClientError,
-            AccessDeniedException,
             ServerDisconnectedError,
             HttpProcessingError) as e:
 
             print(
                 f"Couldn't establish connection:\
-                {
-                getattr(e, "status", None),
-                getattr(e, "message", None)
-                }.\nRetrying {retry_count}/{max_retries}"
+                {type(e).__name__, e}.\nRetrying {retry_count}/{max_retries}"
             )
             if retry_count == max_retries:
                 print("Reached maximum number of retries. Closing...")
                 return
             else:
                 retry_count += 1
-                await asyncio.sleep(1) if use_proxy else await asyncio.sleep(5)
+                await asyncio.sleep(10)
                 continue
 
         except Exception as e:
@@ -78,7 +92,7 @@ async def async_parse_product_data(
                 return
             else:
                 retry_count += 1
-                await asyncio.sleep(1) if use_proxy else await asyncio.sleep(5)
+                await asyncio.sleep(10)
                 continue
 
 
@@ -173,7 +187,7 @@ async def async_parse_product_data(
                     if "Style Code:" in style_code_text:
                         product["style_code"] = style_code_text.split("Style Code:")[-1].strip()
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(3)
                 return product  # Successful parse
 
 

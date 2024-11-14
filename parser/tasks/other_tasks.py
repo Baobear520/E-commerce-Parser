@@ -1,8 +1,11 @@
+import asyncio
 import json
 import os
 import zipfile
+import aiofiles
 
-from pymongo import MongoClient
+from parser.settings import PATH_TO_VALID_PROXIES
+from .test_proxies import check_proxies
 
 def save_to_json(data,file_name):
     base_path = "data/json_files/"
@@ -36,34 +39,51 @@ def save_to_html(page_source,file_name):
     print(f"Page saved as {path_to_file}")
 
 
-def save_to_db(products, db_name="products_db", collection_name="men_products"):
-    """Сохраняет данные о продуктах в базу MongoDB."""
-    client = MongoClient('mongodb://localhost:27017/')
-    db = client[db_name]
-    collection = db[collection_name]
-    collection.create_index("product_id", unique=True)
+# def save_to_db(products, db_name="products_db", collection_name="men_products"):
+#     """Сохраняет данные о продуктах в базу MongoDB."""
+#     client = MongoClient('mongodb://localhost:27017/')
+#     db = client[db_name]
+#     collection = db[collection_name]
+#     collection.create_index("product_id", unique=True)
+#
+#     # Вставляем данные сразу все товары с текущей страницы
+#     if isinstance(products, list) and products:
+#         collection.insert_many(products)
+#         print(f"Inserted {len(products)} products into MongoDB.")
+#     else:
+#         print("No products to insert.")
+#
+#     client.close()
 
-    # Вставляем данные сразу все товары с текущей страницы
-    if isinstance(products, list) and products:
-        collection.insert_many(products)
-        print(f"Inserted {len(products)} products into MongoDB.")
-    else:
-        print("No products to insert.")
+def get_proxies(source,require_proxy_auth,update_proxy_source=False):
+    try:
+        if update_proxy_source:
+            asyncio.run(check_proxies(has_proxy_auth=require_proxy_auth))
+    except Exception as e:
+        print(f"An error occurred during proxy source updating: {type(e).__name__}, {e}")
 
-    client.close()
-
-def get_proxies(source):
     try:
         with open(source,"r") as f:
             return [p for p in f]
     except Exception as e:
-        print(type(e))
-        print(f"Error while extracting proxies from the file.")
+        print(f"Error while opening the file: {type(e).__name__},{e}")
 
-async def async_get_proxies(source):
+
+async def async_get_proxies(source, require_proxy_auth, update_proxy_source=False):
+
+    if update_proxy_source:
+        await check_proxies(has_proxy_auth=require_proxy_auth)  # write valid proxies to source file
+    print('i am here')
     try:
-        with open(source,"r") as f:
-            return [p for p in f]
+        # Open the file asynchronously and read proxies line-by-line
+        async with aiofiles.open(source, "r") as f:
+            proxies = [line.strip() for line in await f.readlines() if line.strip()]
+        return proxies
     except Exception as e:
-        print(type(e))
-        print(f"Error while extracting proxies from the file.")
+        print(type(e).__name__)
+        print(f"Error while extracting proxies from the file: {e}")
+        return []
+
+
+if __name__ == "__main__":
+    asyncio.run(async_get_proxies(PATH_TO_VALID_PROXIES,require_proxy_auth=True))
