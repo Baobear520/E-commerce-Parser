@@ -73,11 +73,11 @@ async def async_get_proxies(source, require_proxy_auth, update_proxy_source=Fals
 
     if update_proxy_source:
         await check_proxies(has_proxy_auth=require_proxy_auth)  # write valid proxies to source file
-    print('i am here')
     try:
         # Open the file asynchronously and read proxies line-by-line
         async with aiofiles.open(source, "r") as f:
             proxies = [line.strip() for line in await f.readlines() if line.strip()]
+        print("Obtained a list of proxies")
         return proxies
     except Exception as e:
         print(type(e).__name__)

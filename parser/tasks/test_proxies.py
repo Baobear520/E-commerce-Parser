@@ -3,7 +3,7 @@ import aiohttp
 import aiofiles
 import random
 
-from parser.settings import PATH_TO_VALID_PROXIES
+from parser.settings import PATH_TO_VALID_PROXIES, USER_AGENT
 
 
 async def read_proxies(source):
@@ -17,7 +17,6 @@ async def read_proxies(source):
                     if not proxy.startswith("http://") and not proxy.startswith("https://"):
                         proxy = f"http://{proxy}"
                     await q.put(proxy)
-                    print(proxy)
         return q
     except Exception as e:
         print(f"Error loading proxies from file: {e}")
@@ -42,6 +41,7 @@ async def trim_proxy(proxy):
 
 async def test_proxy(session, url, proxy, has_proxy_auth):
     """Test a proxy by attempting to connect to a URL."""
+    headers = {"User-Agent": USER_AGENT}
     try:
         if has_proxy_auth:
             proxy, login, password = await trim_proxy(proxy=proxy)
@@ -51,6 +51,7 @@ async def test_proxy(session, url, proxy, has_proxy_auth):
         async with session.get(
                 url,
                 proxy=proxy,
+                proxy_headers=headers,
                 proxy_auth=proxy_auth,
                 timeout=10
         ) as response:
