@@ -79,7 +79,7 @@ async def async_get_proxies(source, require_proxy_auth=False, update_proxy_sourc
         # Open the file asynchronously and read proxies line-by-line
         async with aiofiles.open(source, "r") as f:
             proxies = [line.strip() for line in await f.readlines() if line.strip()]
-            print("Obtained a list of proxies")
+            print("Obtained a list of proxies from the existing file.")
         return proxies
     except Exception as e:
         print(type(e).__name__)
