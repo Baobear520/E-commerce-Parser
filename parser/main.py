@@ -12,7 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from urllib3.exceptions import MaxRetryError, ProtocolError
 
 from parser.exceptions import AccessDeniedException
-from parser.proxy_auth import proxy_auth
+from parser.selenium_proxy_auth import proxy_auth
 from parser.tasks.bs4_tasks import parse_product_data
 from parser.tasks.db_scripts import init_db, save_to_sqlite_db, check_sqlite_db
 from parser.tasks.other_tasks import get_proxies

@@ -41,7 +41,7 @@ async def main():
     require_proxy_auth = True
 
     if use_proxy:
-        proxies = await async_get_proxies(
+        proxies = await async_get_proxies(    #
         PATH_TO_VALID_PROXIES,
         require_proxy_auth=require_proxy_auth
         )

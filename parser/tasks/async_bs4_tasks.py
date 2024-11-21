@@ -292,6 +292,6 @@ async def scrape_product_data(html):
         return product  # Successful parse
 
     except Exception as e:
-        print(f"Unexpected error while parsing data: {getattr(e, "__dict__", {})}.")
+        print(f"Unexpected error while parsing data: {type(e).__name__},{e}.")
         await asyncio.sleep(1)
         return product
