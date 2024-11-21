@@ -16,7 +16,10 @@ async def read_proxies(source):
                 if proxy:
                     if not proxy.startswith("http://") and not proxy.startswith("https://"):
                         proxy = f"http://{proxy}"
-                    await q.put(proxy)
+                        await q.put(proxy)
+                        proxy = f"https://{proxy}"
+                        await q.put(proxy)
+
         return q
     except Exception as e:
         print(f"Error loading proxies from file: {e}")
