@@ -3,9 +3,11 @@ import json
 import os
 import zipfile
 import aiofiles
+import aiohttp
 
 from parser.settings import PATH_TO_VALID_PROXIES
-from .test_proxies import check_proxies
+from .test_proxies import check_proxies, save_valid_proxies
+
 
 def save_to_json(data,file_name):
     base_path = "data/json_files/"
@@ -69,7 +71,7 @@ def get_proxies(source,require_proxy_auth,update_proxy_source=False):
         print(f"Error while opening the file: {type(e).__name__},{e}")
 
 
-async def async_get_proxies(source, require_proxy_auth, update_proxy_source=False):
+async def async_get_proxies(source, require_proxy_auth=False, update_proxy_source=False):
 
     if update_proxy_source:
         await check_proxies(has_proxy_auth=require_proxy_auth)  # write valid proxies to source file
@@ -77,7 +79,7 @@ async def async_get_proxies(source, require_proxy_auth, update_proxy_source=Fals
         # Open the file asynchronously and read proxies line-by-line
         async with aiofiles.open(source, "r") as f:
             proxies = [line.strip() for line in await f.readlines() if line.strip()]
-        print("Obtained a list of proxies")
+            print("Obtained a list of proxies")
         return proxies
     except Exception as e:
         print(type(e).__name__)
@@ -85,5 +87,20 @@ async def async_get_proxies(source, require_proxy_auth, update_proxy_source=Fals
         return []
 
 
+# async def download_proxy_list(url):
+#     async with aiohttp.ClientSession() as session:
+#         result = await session.get(url)
+#         print(result)
+#
+#         #await save_valid_proxies(path_to=,proxies=result)
+#
+#
+# if __name__ == "__main__":
+#     asyncio.run(download_proxy_list(
+#         url="https://free-proxy-list.net/blog/get-proxy-list-using-api?https=no&anonymity=yes,"
+#     ))
+
+
+
 if __name__ == "__main__":
-    asyncio.run(async_get_proxies(PATH_TO_VALID_PROXIES,require_proxy_auth=True))
+    asyncio.run(async_get_proxies(PATH_TO_VALID_PROXIES))
