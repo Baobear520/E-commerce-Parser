@@ -7,8 +7,8 @@ from parser.settings import PATH_TO_VALID_PROXIES, USER_AGENT
 
 
 async def read_proxies(source):
-    """Load proxies from a file asynchronously and place them into a queue."""
-    q = asyncio.Queue()
+    """Load proxies from a file asynchronously and place them into a list."""
+    proxies = []
     try:
         async with aiofiles.open(source, "r") as f:
             async for line in f:
@@ -16,11 +16,12 @@ async def read_proxies(source):
                 if proxy:
                     if not proxy.startswith("http://") and not proxy.startswith("https://"):
                         proxy = f"http://{proxy}"
-                        await q.put(proxy)
+                        proxies.append(proxy)
                         proxy = f"https://{proxy}"
-                        await q.put(proxy)
+                    proxies.append(proxy)
 
-        return q
+
+        return proxies
     except Exception as e:
         print(f"Error loading proxies from file: {e}")
         return None
@@ -38,16 +39,15 @@ async def save_valid_proxies(path_to, proxies):
 
 async def trim_proxy(proxy):
     proxy_split = proxy.split(":")
-    login, password = proxy_split[-2], proxy_split[-1]
-    proxy = proxy.removesuffix(f":{login}:{password}")
-    return proxy, login, password
+    host, port, login, password = proxy_split[0], proxy_split[1], proxy_split[2], proxy_split[3]
+    return host, port, login, password
 
 async def test_proxy(session, url, proxy, has_proxy_auth):
     """Test a proxy by attempting to connect to a URL."""
     headers = {"User-Agent": USER_AGENT}
     try:
         if has_proxy_auth:
-            proxy, login, password = await trim_proxy(proxy=proxy)
+            address, port, login, password = await trim_proxy(proxy=proxy)
             proxy_auth = aiohttp.BasicAuth(login=login, password=password)
         else:
             proxy_auth = None
@@ -91,11 +91,14 @@ async def check_proxies(has_proxy_auth=False):
     path_to_source = base_path + source_file_name
     path_to_output = PATH_TO_VALID_PROXIES
     test_url = "https://httpbin.org/ip"
+    proxies_queue = asyncio.Queue()
 
-    proxies_queue = await read_proxies(source=path_to_source)
-    if not proxies_queue:
+    proxies_list = await read_proxies(source=path_to_source)
+    if not proxies_list:
         print("No proxies to test.")
         return
+    for p in proxies_list:
+        proxies_queue.put_nowait(p)
 
     async with aiohttp.ClientSession(headers={"User-Agent": random.choice(user_agents)}) as session:
         valid_proxies = await gather_tasks(session, test_url, proxies_queue, has_proxy_auth)

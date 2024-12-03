@@ -1,5 +1,5 @@
 
-from parser.tasks.other_tasks import save_to_zip
+from parser.tasks.sync_tasks.other_tasks import save_to_zip
 
 
 def proxy_auth(host,port,user,password):

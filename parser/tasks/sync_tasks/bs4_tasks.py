@@ -1,16 +1,9 @@
-import random
-import asyncio
 import json
 
 from bs4 import BeautifulSoup
-from aiohttp import ClientSession, ClientResponseError, ServerDisconnectedError, ClientError
-from aiohttp.http_exceptions import HttpProcessingError
-
-from parser.exceptions import AccessDeniedException
-from parser.settings import USER_AGENT
 
 
-def parse_product_data(page_source):
+def scrape_product_data(page_source):
     """Парсит HTML страницы продукта и извлекает информацию о продукте."""
     soup = BeautifulSoup(page_source, 'lxml')
     # Находим основной контейнер продукта

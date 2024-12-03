@@ -7,16 +7,10 @@ from bs4 import BeautifulSoup
 from aiohttp import ClientSession, ClientResponseError, ServerDisconnectedError, ClientError
 from aiohttp.http_exceptions import HttpProcessingError
 
-from parser.exceptions import AccessDeniedException
+from other_scripts.exceptions import AccessDeniedException
 from parser.settings import USER_AGENT
 
-from parser.tasks.test_proxies import trim_proxy
-
-
-# async def async_get_page_soup(response):
-#     # Process page content
-#     page_content = await response.text()
-#     return BeautifulSoup(page_content, 'lxml')
+from other_scripts.test_proxies import trim_proxy
 
 
 async def async_parse_product_data(
