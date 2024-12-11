@@ -1,30 +1,35 @@
 import json
+import time
 
 from bs4 import BeautifulSoup
 
+from other_scripts.utils import runtime_counter
+from parser.settings import USER_AGENT
+from parser.tasks.sync_tasks.chrome_driver_setup import get_chrome_driver
 
-def scrape_product_data(page_source):
-    """Парсит HTML страницы продукта и извлекает информацию о продукте."""
-    soup = BeautifulSoup(page_source, 'lxml')
-    # Находим основной контейнер продукта
-    product_container = soup.find('div', class_='product-secondary-section pdp-standard')
-    print("Found the item container")
-    if not product_container:
-        print("Product container not found.")
-        return None
 
-    # Инициализируем переменные для хранения данных
+
+def scrape_product_data(html):
+    # Initialize product data dictionary
+
     product = {
         "name": None,
         "brand_name": None,
         "description": None,
         "original_price_USD": None,
         "discount_price_USD": None,
-        "color": None,  # Массив цветов
+        "color": None,
         "style_code": None
     }
 
     try:
+        soup = BeautifulSoup(html, 'lxml')
+        product_container = soup.find('div', class_='product-secondary-section pdp-standard')
+        if not product_container:
+            print("Product container not found.")
+            return None
+        print("Found the item container. Scraping...")
+
         # Извлекаем бренд
         brand_tag = soup.find('span', class_='product-brand-name')
         if brand_tag:
@@ -89,7 +94,6 @@ def scrape_product_data(page_source):
         # Конвертируем в JSON-string
         product["color"] = json.dumps(colors) if colors else None
 
-
         # Извлекаем Style Code
         style_code_tag = soup.find('div', class_='product-detail-id')
         if style_code_tag:
@@ -97,33 +101,10 @@ def scrape_product_data(page_source):
             if "Style Code:" in style_code_text:
                 product["style_code"] = style_code_text.split("Style Code:")[-1].strip()
 
+        print(f"Product data: {product}")
+        return product
+
     except Exception as e:
-        print(f"Error parsing product details: {e}")
-    return product
-
-
-
-
-
-# product = {
-    #   "style_code": <div class="product-detail-id">Style Code: 0400021492026</div>
-    #    "brand_name":<span class="product-brand-name">
-    # <a href="/brand/joe-s-jeans" class="product-brand adobelaunch__brand" data-adobelaunchproductid="0400021910443">Joe's Jeans</a>
-    # </span>
-    #     "name": <span class="product-name h2">
-    # Harris Plaid Bouclé Flannel Shirt</span>,
-    #     "description": <div class="value content" id="collapsible-details-1">
-    # Joe's Jeans' Harris flannel shirt features a Sedona plaid print and comfortbale bouclé texture. Crafted of soft cotton, the woven design offers both style and comfort.<ul><li>Spread collar</li><li>Long sleeves, barrel cuffs</li><li>Button-front placket</li><li>100% cotton</li><li>Machine wash</li><li>Imported</li></ul><br><b>SIZE &amp; FIT</b><ul><li>Model measurements: 6’2” tall, 40” chest, 31” waist</li><li>Model is wearing a US size Medium</li></ul>
-    # <div class="product-detail-id">
-    # Style Code: 0400021910443
-    # </div>
-    # </div>,
-    #     "original_price": <span class="formatted_price bfx-price bfx-list-price" content="$189" data-unformatted-price="189" data-bfx="{&quot;original&quot;:[&quot;$189&quot;],&quot;id&quot;:&quot;yzozuibyb&quot;}">
-    # &#xFEFF;HKD 1,584.12
-    # </span>,
-    #     "discount_price": <span class="formatted_sale_price formatted_price js-final-sale-price bfx-price bfx-sale-price" data-unformatted-price="69.99" data-bfx="{&quot;original&quot;:[&quot;$69.99&quot;],&quot;id&quot;:&quot;5a8z34gn0&quot;}">&#xFEFF;HKD 586.63</span>,
-    #     "color": container - <ul class="color-wrapper radio-group-list" role="radiogroup">, <ul class="color-wrapper radio-group-list" role="radiogroup"><li role="radio" aria-checked="true">
-    # 										<button class="color-attribute radio-group-trigger adobelaunch__colorlink selectable selected" aria-label="Select Color BANDANA" aria-describedby="BANDANA"
-# container div class="prices">
-# original price <span class="value" content="570.00">
-# discount price <span class="value bfx-price" content="299.99">
+        print(f"Unexpected error while parsing data: {type(e).__name__},{e}.")
+        time.sleep(1)
+        return product

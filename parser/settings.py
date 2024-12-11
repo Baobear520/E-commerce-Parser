@@ -1,9 +1,4 @@
 
-#Proxy settings
-# PROXY_HOST = '45.130.126.204' # rotating proxy or host
-# PROXY_PORT = 8000 # proxy port
-# PROXY_USER = 'qgohyhbo' # username
-# PROXY_PASS = '53rh9poolpp0' # password
 PATH_TO_VALID_PROXIES = "/Users/aldmikon/Desktop/Python_road/Projects/E-commerce_Parser/data/valid_proxies.txt"
 UPDATE_PROXIES = False
 

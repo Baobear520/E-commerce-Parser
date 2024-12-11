@@ -3,10 +3,9 @@ import random
 
 import aiofiles
 import aiohttp
-
 from other_scripts.exceptions import AccessDeniedException, MaxRetriesExceeded
 from parser.settings import MAX_RETRIES, DELAY, USER_AGENT, TIMEOUT
-from other_scripts.test_proxies import check_proxies, trim_proxy
+from other_scripts.test_proxies import check_proxies, parse_proxy
 
 
 async def async_get_proxies(source, require_proxy_auth=False, update_proxy_source=False):
@@ -43,7 +42,7 @@ async def get_page_text(
         if use_proxy:
             proxy = random.choice(proxies)
             if require_proxy_auth:
-                proxy, login, password = await trim_proxy(proxy=proxy)
+                proxy, login, password = await parse_proxy(proxy=proxy)
                 proxy_auth = aiohttp.BasicAuth(login=login, password=password)
 
         try:
@@ -86,9 +85,10 @@ async def get_page_text(
     # If all retries fail
     raise MaxRetriesExceeded(url)
 
-async def dummy_products_data():
+
+async def mock_products_scraper(number_of_products,start):
     products = {}
-    for i in range(100):
+    for i in range(start,start+number_of_products):
         product = {
             "name": None,
             "brand_name": None,
@@ -99,8 +99,9 @@ async def dummy_products_data():
             "style_code": None
         }
         products.update({i+1: product})
-        await asyncio.sleep(2)
-    print(f"Returning {len(products.items())} objects")
+        #print(f"Added product {i+1}")
+    await asyncio.sleep(5)
+    print(f"Returning {len(products)} objects")
     return products
 
 

@@ -19,7 +19,7 @@ def init_db(db, table_name="products"):
                 cursor.execute(f'''
                     CREATE TABLE IF NOT EXISTS {table_name} (
                         product_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        style_code INT UNIQUE,
+                        style_code INT,
                         brand_name TEXT,
                         name TEXT,
                         description TEXT,
@@ -80,7 +80,7 @@ def save_to_sqlite_db(db, data, table_name="products"):
                         cursor.execute(f'''
                             UPDATE {table_name}
                             SET 
-                                style_code = ?
+                                style_code = ?,
                                 brand_name = ?, 
                                 description = ?, 
                                 original_price_USD = ?, 

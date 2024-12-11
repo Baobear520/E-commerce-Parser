@@ -3,28 +3,24 @@ import aiohttp
 import aiofiles
 import random
 
-from parser.settings import PATH_TO_VALID_PROXIES, USER_AGENT
+from parser.settings import PATH_TO_VALID_PROXIES, USER_AGENT, TIMEOUT
 
 
 async def read_proxies(source):
-    """Load proxies from a file asynchronously and place them into a list."""
+    """
+    Load proxies from a file asynchronously and place them into a list.
+    Returns a list of proxies with both http:// and https:// variants.
+    """
     proxies = []
     try:
         async with aiofiles.open(source, "r") as f:
             async for line in f:
-                proxy = line.strip()
-                if proxy:
-                    if not proxy.startswith("http://") and not proxy.startswith("https://"):
-                        proxy = f"http://{proxy}"
-                        proxies.append(proxy)
-                        proxy = f"https://{proxy}"
-                    proxies.append(proxy)
-
-
-        return proxies
+                proxies.append(line.strip())
     except Exception as e:
-        print(f"Error loading proxies from file: {e}")
-        return None
+        print(f"Error loading proxies from file '{source}': {e}")
+
+    finally:
+        return proxies  # Return an empty list in case of an error
 
 
 async def save_valid_proxies(path_to, proxies):
@@ -37,35 +33,37 @@ async def save_valid_proxies(path_to, proxies):
         print(f"Error writing valid proxies to file: {e}")
 
 
-async def trim_proxy(proxy):
-    proxy_split = proxy.split(":")
-    host, port, login, password = proxy_split[0], proxy_split[1], proxy_split[2], proxy_split[3]
+async def parse_proxy(proxy):
+    host, port, login, password = proxy.split(":")
     return host, port, login, password
 
 async def test_proxy(session, url, proxy, has_proxy_auth):
     """Test a proxy by attempting to connect to a URL."""
     headers = {"User-Agent": USER_AGENT}
+    protocols = ["http", "https"]
     try:
         if has_proxy_auth:
-            address, port, login, password = await trim_proxy(proxy=proxy)
+            host, port, login, password = await parse_proxy(proxy=proxy)
             proxy_auth = aiohttp.BasicAuth(login=login, password=password)
         else:
             proxy_auth = None
-        async with session.get(
-                url,
-                proxy=proxy,
-                proxy_headers=headers,
-                proxy_auth=proxy_auth,
-                timeout=10
-        ) as response:
-            if response.status == 200:
-                print(f"Valid proxy: {proxy}")
-                return proxy if not has_proxy_auth else ":".join([proxy,login,password])
+        for protocol in protocols:
+            proxy = f"{protocol}://{proxy}"
+            async with session.get(
+                    url,
+                    proxy=proxy,
+                    proxy_headers=headers,
+                    proxy_auth=proxy_auth,
+                    timeout=aiohttp.ClientTimeout(total=TIMEOUT)
+            ) as response:
+                if response.status == 200:
+                    print(f"Valid proxy: {proxy}")
+                    return proxy if not has_proxy_auth else ":".join([host,port,login,password])
 
-            else:
-                print(f"Invalid response {response.status} for proxy: {proxy}")
+                else:
+                    print(f"Invalid response {response.status} for proxy: {proxy}")
     except Exception as e:
-        print(f"Error with proxy {proxy}: {type(e).__name__}")
+        print(f"Error with proxy {proxy}: {type(e).__name__}\n{e}")
 
 
 async def gather_tasks(session, url, proxies_queue, has_proxy_auth):

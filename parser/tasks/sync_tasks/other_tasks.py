@@ -1,10 +1,14 @@
 import asyncio
 import json
 import os
+import random
+import threading
+import time
 import zipfile
 
-from parser.settings import PATH_TO_VALID_PROXIES
+from parser.settings import PATH_TO_VALID_PROXIES, USER_AGENT
 from other_scripts.test_proxies import check_proxies
+from parser.tasks.async_tasks.other_async_tasks import async_get_proxies
 
 
 def save_to_json(data,file_name):

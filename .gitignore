@@ -1,10 +1,12 @@
 .venv
-data
+*data
 .idea
+.iml
 *.pyc
 __pycache__/
 .DS_Store
 parser/products.db
-parser/threads_main.py
-parser/threads_sqlite.py
+parser/other_scripts/mock.py
+
+
 
