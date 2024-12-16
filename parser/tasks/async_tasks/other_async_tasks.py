@@ -105,15 +105,3 @@ async def mock_products_scraper(number_of_products,start):
     return products
 
 
-# async def download_proxy_list(url):
-#     async with aiohttp.ClientSession() as session:
-#         result = await session.get(url)
-#         print(result)
-#
-#         #await save_valid_proxies(path_to=,proxies=result)
-#
-#
-# if __name__ == "__main__":
-#     asyncio.run(download_proxy_list(
-#         url="https://free-proxy-list.net/blog/get-proxy-list-using-api?https=no&anonymity=yes,"
-#     ))
