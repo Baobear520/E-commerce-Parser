@@ -41,7 +41,7 @@ def init_db(db, table_name="products"):
         print(f"Error connecting to the database '{db}': {e}.")
 
 
-def save_to_sqlite_db(db, data, table_name="products"):
+def save_to_db_in_bulk(db, data, table_name="products"):
     """Saves product data to the SQLite database, inserting or updating as needed."""
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 

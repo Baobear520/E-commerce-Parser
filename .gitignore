@@ -5,8 +5,9 @@
 *.pyc
 __pycache__/
 .DS_Store
-parser/products.db
-parser/other_scripts/mock.py
+products.db
+other_scripts/mock.py
+.env
 
 
 

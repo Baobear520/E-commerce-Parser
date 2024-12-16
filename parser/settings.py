@@ -1,16 +1,26 @@
+import os
+from dotenv import load_dotenv
+from pathlib import Path
 
-PATH_TO_VALID_PROXIES = "/Users/aldmikon/Desktop/Python_road/Projects/E-commerce_Parser/data/valid_proxies.txt"
-UPDATE_PROXIES = False
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv()
 
-TEST_IP_URL = 'https://atomurl.net/myip/'
-TARGET_URL = 'https://www.saksoff5th.com/'
+#Basic settings
+TARGET_URL = os.getenv('TARGET_URL')
+TIMEOUT = int(os.getenv('TIMEOUT'))
+DELAY = int(os.getenv('DELAY'))
+MAX_RETRIES = int(os.getenv('MAX_RETRIES'))
+MAX_WORKERS = int(os.getenv('MAX_WORKERS'))
 
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+#Chrome settings
+USER_AGENT = os.getenv('USER_AGENT')
 
-# Путь к файлу базы данных SQLite
-DB_PATH = 'products.db'
+#Database settings
+DB_PATH = BASE_DIR / os.getenv('DB_PATH')
 
-TIMEOUT = 10
-DELAY = 3
-MAX_RETRIES = 5
-MAX_WORKERS = 10
+#Proxy testing script
+PATH_TO_VALID_PROXIES = BASE_DIR / os.getenv('PATH_TO_VALID_PROXIES')
+UPDATE_PROXIES = os.getenv('UPDATE_PROXIES',False)
+TEST_IP_URL = os.getenv('TEST_IP_URL','https://atomurl.net/myip/')
+
+print(PATH_TO_VALID_PROXIES)

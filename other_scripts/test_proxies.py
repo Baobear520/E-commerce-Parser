@@ -1,9 +1,12 @@
 import asyncio
+import os
+
 import aiohttp
 import aiofiles
 import random
 
-from parser.settings import PATH_TO_VALID_PROXIES, USER_AGENT, TIMEOUT
+from parser.settings import PATH_TO_VALID_PROXIES, USER_AGENT, TIMEOUT, BASE_DIR
+
 
 
 async def read_proxies(source):
@@ -85,12 +88,13 @@ async def check_proxies(has_proxy_auth=False):
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
     ]
     source_file_name = "auth_proxies.txt" if has_proxy_auth else "anon_proxies.txt"
-    base_path = "/Users/aldmikon/Desktop/Python_road/Projects/E-commerce_Parser/data/"
-    path_to_source = base_path + source_file_name
+    base_path = os.path.join(BASE_DIR, "data")
+    path_to_source = "/".join([base_path, source_file_name])
     path_to_output = PATH_TO_VALID_PROXIES
     test_url = "https://httpbin.org/ip"
     proxies_queue = asyncio.Queue()
 
+    #Read proxies from file
     proxies_list = await read_proxies(source=path_to_source)
     if not proxies_list:
         print("No proxies to test.")
