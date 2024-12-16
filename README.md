@@ -9,8 +9,6 @@ Enable re-scraping functionality (if the same data is retrieved, update only the
 ## Project Description
 This project is a web scraping application designed to collect product data from the Saks Off 5th e-commerce website using parallel multi-threading and asynchronous HTTP requests for scraping.
 The script also supports the usage of proxies to avoid IP bans and throttling.
-It uses Selenium WebDriver to emulate users' actions in Chrome browser and scrape the links to desired products and Beautiful Soup to extract structured product information such as names, prices, descriptions, and other details. 
-
 
 ## Features
 
@@ -40,20 +38,21 @@ It uses Selenium WebDriver to emulate users' actions in Chrome browser and scrap
 ## Installation and Setup
 
 ### Requirements:
-Python 3.9 or higher.
+Python 3.9+
+SQLite database
 Google Chrome and the corresponding chromedriver.
-Virtual environment (optional but recommended).
+
 
 ### Installation Steps:
 Clone the repository:
 
 ```
-git clone https://github.com/YOUR-USERNAME/UnderTheWeatherPlaylistMaker.git
+git clone https://github.com/Baobear520/E-commerce-Parser.git
 ```
 Switch to the project folder:
 
 ```
-cd UnderTheWeatherPlaylistMaker
+cd E-commerce_Parser
 ```
 Set up a virtual environment:
 
@@ -69,7 +68,8 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 Set up environment variables for (create a .env file in the project root and add the following lines):
-```#Basic settings
+```
+#Basic settings
 TARGET_URL = 'https://www.saksoff5th.com/'
 TIMEOUT = #your_value
 DELAY = #your_value
@@ -93,6 +93,18 @@ Download the version of chromedriver matching your Chrome installation from here
 Ensure chromedriver is in your system's PATH or place it in the project directory.
 
 Configure Proxies:
+## Testing available proxies
+I recommend you first create a "data" folder in the root directory for keeping all non-parsing related files/data.
+### Proxies with no auth
+ - create a file "anon_proxies.txt" in the data folder
+ - add your list of proxies to the file
+ - execute the testing script that will be making HTTP requests to the URL set in the TEST_IP_URL variable.
+   ```
+   python other_scripts/test_proxies.py
+   ```
+### Proxies that require authentication
+Next, create a file "anon_proxies.txt"
+Add a list of proxies to 
 Add valid proxies 
 configurations (if required) to the proxies.txt file or relevant settings.
 
