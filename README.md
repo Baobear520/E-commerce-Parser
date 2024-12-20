@@ -1,41 +1,41 @@
 # Saksoff5th.com Data Scraper #
 
 ## Task
-- Scrape data from a list of >1000 products (used https://www.saksoff5th.com/c/men as a default) including fields such as "style code", "name", "description", "original price", "discount price", "color(s)" and store the data in a database.
+- Scrape data from a list of >1000 products (used [saksoff5th.com/c/men](https://www.saksoff5th.com/c/men) as a default) including fields such as "style code", "name", "description", "original price", "discount price", "color(s)" and store the data in a database.
 - Ensure that the scraping process is completed within 20 minutes. 
 - Enable re-scraping functionality (if the same data is retrieved, update only the "last_updated" field in the database.
 
 ## Project Description
-This project is a web scraping application designed to extract and store product data from https://www.saksoff5th.com using parallel multi-threading and asynchronous HTTP requests for scraping.
+This project is a web scraping application designed to extract and store product data from [saksoff5th.com](https://www.saksoff5th.com) using parallel multi-threading and asynchronous HTTP requests for scraping.
 
 ## Features
 
-### 1. Automated Browser Control and Data Scraping
+#### Automated Browser Control and Data Scraping
 
  Use of Selenium WebDriver to emulate users' actions in Chrome browser and scrape the links to desired products
 
-### 2. Modal Window Handling
+#### 2. Modal Window Handling
 
  Detects and closes existing modal windows dynamically to ensure uninterrupted scraping.
 
-### 3. Dynamic Content Support
+#### 3. Dynamic Content Support
 
  Uses Selenium WebDriver with headless Chrome to handle JavaScript-heavy pages.
-### 4. Proxy Management:
+#### 4. Proxy Management:
  - Support for authenticated and unauthenticated proxies.
  - A separate script for reading proxies from a file, validation for correct status code and saving to a file
  - Dynamic proxies rotation mechanism to handle rate limits or IP bans.
 
-### 5. Parallel Processing:
+#### 5. Parallel Processing:
  - Leverages Python's asyncio and aiohttp for concurrent requests to maximize efficiency and reduce runtime.
  - Utilizes Python's ThreadPoolExecutor to execute multiple scraping tasks simultaneously, increasing speed and efficiency.
-### 6. Retry Logic and Error Handling
+#### 6. Retry Logic and Error Handling
  Robust retry mechanism to handle network errors, access denials, and timeouts.
-### 7. Database Integration
+#### 7. Database Integration
  Saves scraped data to a SQLite database for easy and fast storage and retrieval
-### 8. Scheduled Rescraping
+#### 8. Scheduled Rescraping
  Automatic pipeline for re-scraping data at regular intervals.
-### 9. Performance Tracking
+#### 9. Performance Tracking
  A runtime counter decorator tracks the execution time of the entire scraping process.
 
 
@@ -114,6 +114,27 @@ It has one required positional argument ```has_proxy_auth``` which is by default
    python other_scripts/proxy_testing/test_proxies.py
    ```
 ## Running the script
+There are two independent scripts that use different approaches:
+### using_threads.py
+**The script uses Selenium WebDriver and multithreading to scrape product data from a website (Saksoff5th) and save it to a SQLite database.**
+
+The whole scraping process is controlled by ```scheduler```  - function that runs the scraper in a given intervals of time (in our case the main scraping logic is locked within ```main`` function of the file).
+
+The script in ```main``` function initializes a database and sets up a WebDriver instance (```connect_to_base_url``` function) with optional proxy usage. If proxies are used, the script starts an event loop to read them asynchronously from ''valid_proxies.txt```.
+
+Next, it navigates to the target URL and selects **Men** from a dropdown menu where the target products are located. The function ```select_section_from_dropdown_menu``` contains logic for handling pop-up modal windows that can intercept clicking on the dropdown menu section.
+and locates pagination elements.
+
+Then, the script enters the main scraping loop, where it:
+ - scrolls down the current page to generate HTML of all the product objects (```locate_pagination``` function)
+ - scrapes product URLs from the current page using Selenium.
+ - puts the URLs into a queue.
+ - uses a ThreadPoolExecutor to parallelize the scraping process, with each worker task creating a separate WebDriver instance to scrape product data from the URLs in the queue, saving the results in the database and appending it to the list of all the products (```all_products```).
+> Before creating a pool of threads for product URLs, the main webdriver navigates to the next page and awaits until the queue of product URLs from the previous page is empty
+e.g. scraping of the product data is done.
+
+The script repeats the scraping loop until it has scraped 1000 products.
+Finally, the script quits the WebDriver instance and prints a summary of the scraped products.
 
 
 ## Contacts ##
